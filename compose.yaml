@@ -1,0 +1,7 @@
+services:
+  db-warmer:
+    build: .
+    env_file:
+      - path: ".env"
+        required: true
+    restart: always
