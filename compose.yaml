@@ -1,5 +1,5 @@
 services:
-  db-warmer:
+  app:
     build: .
     env_file:
       - path: ".env"
