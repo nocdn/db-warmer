@@ -1,16 +1,12 @@
 import { SQL } from "bun";
-import ms, { type StringValue } from "ms";
 const logger = require("pino")();
+import { Cron } from "croner";
 
 const POSTGRES_URLS = process.env.POSTGRES_CONNECTION_STRINGS?.split(",");
-const warmingInterval = process.env.WARMING_INTERVAL;
+const CHRON_SCHEDULE = process.env.WARMING_SCHEDULE;
 
-let INTERVAL_MS = warmingInterval
-  ? ms(warmingInterval as StringValue)
-  : ms("4m");
-
-if (INTERVAL_MS === undefined) {
-  INTERVAL_MS = ms("4m");
+if (CHRON_SCHEDULE === undefined) {
+  throw new Error("You must specify a chron schedule for the warming jobs");
 }
 
 if (!POSTGRES_URLS) {
@@ -24,7 +20,7 @@ async function runWake() {
     // so like sending SELECT `2+2` or SELECT 'hello'
     // it checks the connection works, the SQL parser works, the query executor runs, and server responds
     try {
-      const result = await pg`SELECT now()`;
+      const result = await pg`SELECT 1`;
     } catch (error) {
       console.error("Ping failed", error);
     }
@@ -45,4 +41,7 @@ async function runWake() {
 logger.info("Starting database warmer");
 await runWake();
 
-setInterval(runWake, INTERVAL_MS);
+// schedule a chron job based on the schedule from .env
+const job = new Cron(CHRON_SCHEDULE, () => {
+  runWake();
+});
