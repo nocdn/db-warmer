@@ -15,26 +15,32 @@ if (!POSTGRES_URLS) {
 
 async function runWake() {
   async function wake(URL: string) {
+    const start = Date.now();
     const pg = new SQL(URL);
     // this just returns a computed value of 1, rather than pulling any data
     // so like sending SELECT `2+2` or SELECT 'hello'
     // it checks the connection works, the SQL parser works, the query executor runs, and server responds
     try {
       const result = await pg`SELECT 1`;
+      const ms = Date.now() - start;
+      return ms;
     } catch (error) {
       console.error("Ping failed", error);
     }
   }
 
+  let connectionTimes = [];
   if (POSTGRES_URLS) {
     for (let i = 0; i < POSTGRES_URLS.length; i++) {
       const connection_string = POSTGRES_URLS[i];
       if (connection_string) {
-        await wake(connection_string);
+        const timeTaken = await wake(connection_string);
+        connectionTimes.push(Number(timeTaken) / 1000);
       }
     }
   }
-  logger.info("Finished warming run");
+  const child = logger.child({ timesTaken: connectionTimes });
+  child.info("Finished warming run");
 }
 
 // run immediately one time
