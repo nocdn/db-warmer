@@ -1,5 +1,8 @@
 import { SQL } from "bun";
-const logger = require("pino")();
+const logger = require("pino")({
+  // removes "pid" and "hostname" keys
+  base: false,
+});
 import { Cron } from "croner";
 
 const POSTGRES_URLS = process.env.POSTGRES_CONNECTION_STRINGS?.split(",");
